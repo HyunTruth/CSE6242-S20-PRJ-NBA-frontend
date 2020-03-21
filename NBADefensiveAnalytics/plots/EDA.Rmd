@@ -1,0 +1,167 @@
+---
+title: "PlotDrafts"
+author: "Stephen Pelkofer"
+date: "3/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Imports
+
+```{r}
+library(tidyverse)
+library(highcharter) #interactive plotting library
+library(tibbletime)
+```
+
+## Data
+
+```{r}
+GameLogs <- read.csv("C:/MAMP/htdocs/FinalGameLogs.csv")
+```
+
+
+## Plotting
+
+# Custom Color Paletes
+```{r}
+BlueSeqColors <- c( #light to dark blue
+   "#f1eef6",
+   "#bdc9e1",
+   "#74a9cf",
+   "#2b8cbe",
+   "#045a8d"
+)
+
+QualColors <- c( #category/qualitative/groups
+  '#386cb0',
+  "#7fc97f",
+  "#beaed4",
+  "#fdc086",
+  "#ffff99"
+)
+```
+
+
+# (1.a) Shots Defended vs DFG% Scatter
+Resource: http://rstudio-pubs-static.s3.amazonaws.com/470388_85579e7a31b8402ebbc26ba86e6100ca.html
+Filters: Shots Defended, Distance, Team, Opponent, Season
+Ideas:
+- Change between shots/36 and total shots
+
+
+```{r}
+DFG_Percentage <- GameLogs %>%
+  filter(Season == "2019-20",
+         Distance == "0-5ft") %>%
+  group_by(idPlayer,Player,Distance) %>%
+  summarise(T_DFGM = sum(DFGM), T_DFGA = sum(DFGA)) %>%
+  mutate(DFG_Percent = round(T_DFGM/T_DFGA,3)) %>%
+  filter(T_DFGA >= 150)
+
+hchart(DFG_Percentage, "scatter", hcaes(x = "T_DFGA", y = "DFG_Percent",
+                                        group = "Distance",
+                                        name = "Player", DFGA  = "T_DFGA", 
+                                        DFGEfficiency = "DFG_Percent", Distance = "Distance")) %>%
+  hc_tooltip(pointFormat = "<b>{point.name}</b><br />DFGA: {point.DFGA}<br />DFG%: {point.DFGEfficiency}") %>%
+  hc_title(text = "DFGA vs. DFG%") %>%
+  hc_subtitle(text = "NBA 2019-2020 Season") %>%
+  hc_credits(enabled = TRUE,
+             text = "data via stats.nba.com",
+             style = list(
+               fontSize = "10px"
+               )
+             ) %>%
+  hc_add_theme(hc_theme_elementary()) %>%
+  hc_colors(QualColors)
+
+```
+
+# (1.b) DFG% Line by Team
+
+```{r}
+rolling <- rollify(mean,window = 8,na_value = 0)
+Running_DFGP <- GameLogs %>%
+  filter(Season == "2019-20",
+         Distance == "0-5ft",
+         Team == "MIL") %>%
+  group_by(Team,Game_Date) %>%
+  summarise(DFGM = sum(DFGM), DFGA = sum(DFGA)) %>%
+  mutate(DFGP = round(DFGM/DFGA,2),
+         RollingDFGP = round(if_else(rolling(DFGP) == 0, DFGP, rolling(DFGP)),2))
+
+hchart(Running_DFGP, "spline", hcaes(x = "Game_Date", y = "RollingDFGP", group = "Team",
+                                        team = "Team", Date  = "Game_Date", 
+                                        DFGP = "RollingDFGP")) %>%
+  hc_tooltip(pointFormat = "<b>{point.team}</b><br />DFG%: {point.DFGP}") %>%
+  hc_title(text = "DFG% Season Trend") %>%
+  hc_subtitle(text = "NBA 2019-2020 Season") %>%
+  hc_credits(enabled = TRUE,
+             text = "data via stats.nba.com",
+             style = list(
+               fontSize = "10px"
+               )
+             ) %>%
+  hc_add_theme(hc_theme_elementary()) %>%
+  hc_colors(QualColors)
+
+```
+
+
+```{r}
+Running_DFGP <- GameLogs %>%
+  filter(Season == "2019-20",
+         Distance == "0-5ft",
+         Team == "MIL") %>%
+  group_by(Team,Game_Date) %>%
+  summarise(DFGM = sum(DFGM), DFGA = sum(DFGA)) %>%
+  mutate(Running_DFGM = cumsum(DFGM),
+         Running_DFGA = cumsum(DFGA),
+         DFG_Percentage = round(Running_DFGM/Running_DFGA,2))
+
+hchart(Running_DFGP, "spline", hcaes(x = "Game_Date", y = "DFG_Percentage",
+                                        name = "Team", Date  = "Game_Date", 
+                                        DFGP = "DFG_Percentage")) %>%
+  hc_tooltip(pointFormat = "<b>{point.name}</b><br />Date: {point.Date}<br />DFG%: {point.DFGP}") %>%
+  hc_title(text = "DFG% Season Trend") %>%
+  hc_subtitle(text = "NBA 2019-2020 Season") %>%
+  hc_credits(enabled = TRUE,
+             text = "data via stats.nba.com",
+             style = list(
+               fontSize = "10px"
+               )
+             ) %>%
+  hc_add_theme(hc_theme_538()) %>%
+  hc_colors(QualColors)
+```
+
+
+
+
+# (2) DFG% Rating Table
+Resource: https://glin.github.io/reactable/articles/womens-world-cup/womens-world-cup.html
+Ideas:
+- vs league average
+- percentile (nba already does this)
+
+
+# (3) Shot zone map
+Resource:
+Ideas:
+- Custom area or polygon chart? Only need tooltip to show DFG%
+- How to draw court lines over it?
+
+
+# (4) Player Cluster Model
+Resource:
+Ideas:
+- Any selected time period? (re-runs algo)
+
+
+
+
+
+
