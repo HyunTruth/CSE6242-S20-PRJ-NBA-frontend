@@ -14,9 +14,11 @@ ui <- fluidPage(
             tabPanel("DFG% by Shot Distance",
                      fluidRow(
                          column(3,selectInput("Team_Selection","Teams",choices = levels(GameLogs$Team))),
-                         column(3,selectInput("Distance_Selection", "Distance", choices = distance_list))
+                         column(3,selectInput("Distance_Selection", "Distance", choices = distance_list)),
+                         column(3,selectInput("Season_Selection", "Season", choices = levels(GameLogs$Season)))
                      ),
-                     fluidRow(highchartOutput("DistanceScatter", width = "700px", height = "500px"))
+                     fluidRow(highchartOutput("DistanceScatter", width = "100%", height = "400px")),
+                     fluidRow(highchartOutput("DistanceLine", width = "100%", height = "400px"))
             ),
             tabPanel("Player Profile"),
             tabPanel("Player Clusters")
