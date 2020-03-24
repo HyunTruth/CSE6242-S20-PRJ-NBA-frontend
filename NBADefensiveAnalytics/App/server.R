@@ -27,13 +27,13 @@ server <- function(input, output) {
             mutate(Color_Col = if_else(Team == input$Team_Selection,input$Team_Selection,"All Other")) %>%
             filter(Season == input$Season_Selection,
                    Distance == input$Distance_Selection) %>%
-            group_by(Color_Col,Game_Date) %>%
+            group_by(Color_Col,numberGameTeamSeason) %>%
             summarise(DFGM = sum(DFGM), DFGA = sum(DFGA)) %>%
             mutate(DFGP = round(DFGM/DFGA,2),
                    RollingDFGP = round(if_else(rolling(DFGP) == 0, DFGP, rolling(DFGP)),2))
         
-        hchart(Running_DFGP, "spline", hcaes(x = "Game_Date", y = "RollingDFGP", group = "Color_Col",
-                                             team = "Color_Col", Date  = "Game_Date",
+        hchart(Running_DFGP, "spline", hcaes(x = "numberGameTeamSeason", y = "RollingDFGP", group = "Color_Col",
+                                             team = "Color_Col", Game  = "numberGameTeamSeason",
                                              DFGP = "RollingDFGP")) %>%
             hc_tooltip(pointFormat = "<b>{point.team}</b><br />DFG%: {point.DFGP}") %>%
             hc_title(text = "DFG% Season Trend") %>%

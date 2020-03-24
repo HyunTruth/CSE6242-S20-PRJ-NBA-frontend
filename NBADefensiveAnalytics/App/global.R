@@ -8,7 +8,7 @@ GameLogs$Game_Date <- as.Date(GameLogs$Game_Date)
 levels(GameLogs$Distance) <- c("0-5ft","10-14ft","15-19ft","20-24ft","25-29ft","5-9ft")
 
 # Static Filters
-distance_list <- c("0-5ft","5-9ft","10-14ft","15-19ft","20-24ft","25-29ft")
+distance_list <- c("0-4ft","5-9ft","10-14ft","15-19ft","20-24ft","25-29ft")
 
 ## Functions
 rolling <- rollify(mean,window = 5,na_value = 0)

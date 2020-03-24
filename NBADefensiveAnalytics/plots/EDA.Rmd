@@ -16,6 +16,7 @@ Packages needed
 library(tidyverse)
 library(highcharter) #interactive plotting library
 library(tibbletime)
+library(plotly)
 ```
 
 ## Data
@@ -134,10 +135,19 @@ Ideas:
 
 
 # (3) Shot zone map
-Resource:
+Resource
+https://github.com/toddwschneider/ballr/blob/master/court_themes.R
+
 Ideas:
 - Custom area or polygon chart? Only need tooltip to show DFG%
 - How to draw court lines over it?
+
+```{r}
+source("C:/Users/Spelk/Desktop/Georgia Tech Analytics/CSE 6242/CSE6242-S20-PRJ-NBA-frontend/NBADefensiveAnalytics/R/court.R")
+
+#unique(court_points$desc)
+plot_court()
+```
 
 
 # (4) Player Cluster Model
