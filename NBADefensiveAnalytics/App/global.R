@@ -22,10 +22,15 @@ BlueSeqColors <- c( #light to dark blue
   "#045a8d"
 )
 
-QualColors <- c( #category/qualitative/groups
+QualColors <- c( #category/qualitative/groups --> full opacity
   '#386cb0',
   "#fdc086",
   "#7fc97f",
   "#beaed4",
   "#ffff99"
+)
+
+ScatterOppacity <- c(#opacity adjusted blue & orange
+  "rgba(55,126,184,.70)",
+  "rgba(255,127,0,.85)"
 )

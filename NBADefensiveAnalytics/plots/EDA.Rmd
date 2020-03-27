@@ -16,15 +16,19 @@ Packages needed
 library(tidyverse)
 library(highcharter) #interactive plotting library
 library(tibbletime)
-library(plotly)
 ```
 
 ## Data
 
 ```{r}
 GameLogs <- read.csv("C:/MAMP/htdocs/FinalGameLogs.csv")
-levels(GameLogs$Distance) <- c("0-5ft","10-14ft","15-19ft","20-24ft","25-29ft","5-9ft")
+levels(GameLogs$Distance) <- c("0-4ft","10-14ft","15-19ft","20-24ft","25-29ft","5-9ft")
 GameLogs$Game_Date <- as.Date(GameLogs$Game_Date)
+```
+
+
+```{r}
+BoxScores <- read.csv("../data/BoxScores.csv")
 ```
 
 
@@ -47,6 +51,10 @@ QualColors <- c( #category/qualitative/groups
   "#fdc086",
   "#ffff99"
 )
+ScatterOppacity <- c(
+  "rgba(55,126,184,.70)",
+  "rgba(255,127,0,.85)"
+)
 ```
 
 
@@ -60,17 +68,18 @@ Ideas:
 ```{r}
 DFG_Percentage <- GameLogs %>%
   filter(Season == "2019-20",
-         Distance == "0-5ft") %>%
+         Distance == "0-4ft") %>%
   group_by(idPlayer,Player,Distance) %>%
-  summarise(T_DFGM = sum(DFGM), T_DFGA = sum(DFGA)) %>%
-  mutate(DFG_Percent = round(T_DFGM/T_DFGA,3)) %>%
+  summarise(T_DFGM = sum(DFGM), T_DFGA = sum(DFGA), Min = sum(minutes)) %>%
+  mutate(DFG_Percent = round(T_DFGM/T_DFGA,3), ShotsDefended_Per36 = round((T_DFGM/Min)*36,1)) %>%
   filter(T_DFGA >= 150)
 
-hchart(DFG_Percentage, "scatter", hcaes(x = "T_DFGA", y = "DFG_Percent",
+hchart(DFG_Percentage, "scatter",opacity = 0.65,
+       hcaes(x = "ShotsDefended_Per36", y = "DFG_Percent",opacity = .5,
                                         group = "Distance",
-                                        name = "Player", DFGA  = "T_DFGA", 
+                                        name = "Player", DFGA_36  = "ShotsDefended_Per36", 
                                         DFGEfficiency = "DFG_Percent", Distance = "Distance")) %>%
-  hc_tooltip(pointFormat = "<b>{point.name}</b><br />DFGA: {point.DFGA}<br />DFG%: {point.DFGEfficiency}") %>%
+  hc_tooltip(pointFormat = "<b>{point.name}</b><br />DFGA/36: {point.DFGA_36}<br />DFG%: {point.DFGEfficiency}") %>%
   hc_title(text = "DFGA vs. DFG%") %>%
   hc_subtitle(text = "NBA 2019-2020 Season") %>%
   hc_credits(enabled = TRUE,
@@ -80,8 +89,7 @@ hchart(DFG_Percentage, "scatter", hcaes(x = "T_DFGA", y = "DFG_Percent",
                )
              ) %>%
   hc_add_theme(hc_theme_elementary()) %>%
-  hc_colors(QualColors)
-
+  hc_colors(Q2)
 ```
 
 # (1.b) DFG% Line by Team
@@ -153,7 +161,7 @@ plot_court()
 # (4) Player Cluster Model
 Resource:
 Ideas:
-- Any selected time period? (re-runs algo)
+
 
 
 

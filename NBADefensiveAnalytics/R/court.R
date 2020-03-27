@@ -1,6 +1,6 @@
 court_themes = list(
   light = list(
-    court = '#fffcf2',
+    court = '#FFFFFF',
     lines = '#999999',
     text = '#222222'
   ),
@@ -100,26 +100,54 @@ plot_court = function(court_theme = court_themes$light, use_short_three = FALSE)
     filter(y > 0) %>%
     mutate(desc = "ten_nineteen_line")
   
+  ### 20-24 ft Line ###
+  twenty_twentyfour_line = circle_points(center = c(0, hoop_center_y), radius = 24) %>%
+    filter(y > 0) %>%
+    mutate(desc = "twenty_twentyfour")
+  
+  twentyfour_twentynine_line = circle_points(center = c(0, hoop_center_y), radius = 29) %>%
+    filter(y > 0, x > -width / 2, x < width /2) %>%
+    mutate(desc = "twentyfour_twentynine")
 
   court_points = bind_rows(
     court_points,
     foul_circle_top,
-    foul_circle_bottom,
+    #foul_circle_bottom,
     hoop,
     restricted,
-    three_point_line,
     zero_nine_line,
-    ten_nineteen_line
+    ten_nineteen_line,
+    twenty_twentyfour_line,
+    twentyfour_twentynine_line
   )
   
   court_points <<- court_points
   
+  annotation <- data.frame(
+    x = c(0,0,0,0),
+    y = c(10,19,27,32),
+    label = c("55.3%", "47.2%","41.6%","35.1%")
+  )
+  
   ggplot() +
+    geom_ribbon(data = court_points,
+                aes(ymin = 0, ymax = 47, x = x), fill = "#FFFFFF", alpha = .7) +
+    geom_ribbon(data = court_points %>% filter(desc == "twentyfour_twentynine"),
+                aes(ymin = 0, ymax = y, x = x), fill = "#92c5de", alpha = .7) +
+    geom_ribbon(data = court_points %>% filter(desc == "twenty_twentyfour"),
+                aes(ymin = 0, ymax = y, x = x), fill = "#fddbc7", alpha = .7) +
+    geom_ribbon(data = court_points %>% filter(desc == "ten_nineteen_line"),
+                aes(ymin = 0, ymax = y, x = x), fill = "#f4a582", alpha = .7) +
+    geom_ribbon(data = court_points %>% filter(desc == "zero_nine_line"),
+                aes(ymin = 0, ymax = y, x = x), fill = "#0571b0", alpha = .7) +
     geom_path(
       data = court_points,
       aes(x = x, y = y, group = desc),
       color = court_theme$lines
     ) +
+    geom_label(data=annotation, aes(x = x,y = y, label=label),
+              color="#4d4d4d", 
+              size= 5 , angle=0, fontface="bold" ) +
     coord_fixed(ylim = c(0, 35), xlim = c(-25, 25)) +
     theme_minimal(base_size = 22) +
     theme(

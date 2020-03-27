@@ -7,19 +7,22 @@ server <- function(input, output) {
             filter(Season == input$Season_Selection,
                    Distance == input$Distance_Selection) %>% # Filters
             group_by(idPlayer,Player, Team, Distance) %>%
-            summarise(DFGM = sum(DFGM), DFGA = sum(DFGA)) %>%
+            summarise(DFGM = sum(DFGM), DFGA = sum(DFGA), TotalMins = sum(minutes)) %>%
             mutate(DFGP = round(DFGM/DFGA,3),
+                   DFGAPer36 = round((DFGM/TotalMins)*36,1),
                    Color_Col = if_else(Team == input$Team_Selection,input$Team_Selection,"All Other")) %>%
             filter(DFGA >= 150) # Filters with default value (20th percentile and up?)
         
-        hchart(DFG_Percentage, "scatter", hcaes(x = "DFGA", y = "DFGP",
+        hchart(DFG_Percentage, "scatter", hcaes(x = "DFGAPer36", y = "DFGP",
                                                 group = "Color_Col",
-                                                name = "Player", DFGA  = "DFGA", 
+                                                name = "Player", DFGA36  = "DFGAPer36", 
                                                 DFGEfficiency = "DFGP", Distance = "Distance")) %>%
-            hc_tooltip(pointFormat = "<b>{point.name}</b><br />DFGA: {point.DFGA}<br />DFG%: {point.DFGEfficiency}") %>%
-            hc_title(text = "DFGA vs. DFG%") %>%
+            hc_tooltip(pointFormat = "<b>{point.name}</b><br />Shots Defended/36min: {point.DFGA36}<br />DFG%: {point.DFGEfficiency}") %>%
+            hc_title(text = "<b>Shots Defended Per 36 minutes vs. DFG%</b>",
+                     margin = 10,
+                     align = "left") %>%
             hc_add_theme(hc_theme_elementary()) %>%
-            hc_colors(QualColors)
+            hc_colors(ScatterOppacity)
     })
     # Distance Line
     output$DistanceLine <- renderHighchart({
