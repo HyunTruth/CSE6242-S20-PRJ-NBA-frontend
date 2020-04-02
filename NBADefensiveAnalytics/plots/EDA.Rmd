@@ -16,6 +16,10 @@ Packages needed
 library(tidyverse)
 library(highcharter) #interactive plotting library
 library(tibbletime)
+library(ggforce)
+library(scales)
+library(ggtext)
+library(reactable)
 ```
 
 ## Data
@@ -29,6 +33,10 @@ GameLogs$Game_Date <- as.Date(GameLogs$Game_Date)
 
 ```{r}
 BoxScores <- read.csv("../data/BoxScores.csv")
+PlayerInfo <- BoxScores %>%
+  distinct(idPlayer,Player,urlPlayerHeadshot)
+Subset <- PlayerInfo %>%
+  filter(Player == "Anthony Davis")
 ```
 
 
@@ -89,7 +97,7 @@ hchart(DFG_Percentage, "scatter",opacity = 0.65,
                )
              ) %>%
   hc_add_theme(hc_theme_elementary()) %>%
-  hc_colors(Q2)
+  hc_colors(ScatterOppacity)
 ```
 
 # (1.b) DFG% Line by Team
@@ -151,14 +159,168 @@ Ideas:
 - How to draw court lines over it?
 
 ```{r}
-source("C:/Users/Spelk/Desktop/Georgia Tech Analytics/CSE 6242/CSE6242-S20-PRJ-NBA-frontend/NBADefensiveAnalytics/R/court.R")
+PercentileRanks <- GameLogs %>%
+  filter(Season == "2019-20") %>%
+  group_by(idPlayer,Player,Distance) %>%
+  summarise(DFGM = sum(DFGM),DFGA = sum(DFGA)) %>%
+  pivot_wider(id_cols = c(idPlayer, Player), 
+              names_from = Distance, 
+              values_from = c(DFGM,DFGA),
+              values_fill = list(DFGM = 0, DFGA = 0)) %>%
+  transmute("0-9ft" = sum(`DFGM_0-4ft`,`DFGM_5-9ft`)/sum(`DFGA_0-4ft`,`DFGA_5-9ft`),
+         "10-19ft" = sum(`DFGM_10-14ft`,`DFGM_15-19ft`)/sum(`DFGA_10-14ft`,`DFGA_15-19ft`),
+         "20-24ft" = sum(`DFGM_20-24ft`)/sum(`DFGA_20-24ft`),
+         "25-29ft" = sum(`DFGM_25-29ft`)/sum(`DFGA_25-29ft`)
+         ) %>%
+  replace_na(list("0-9ft" = 0, "10-19ft" = 0, "20-24ft" = 0, "25-29ft" = 0))
 
-#unique(court_points$desc)
-plot_court()
+PercentileRanks$zero_nine_zone <- round(percent_rank(desc(PercentileRanks$`0-9ft`)),2)
+PercentileRanks$ten_nineteen_zone <- round(percent_rank(desc(PercentileRanks$`10-19ft`)),2)
+PercentileRanks$twenty_twentyfour_zone <- round(percent_rank(desc(PercentileRanks$`20-24ft`)),2)
+PercentileRanks$twentyfour_twentynine_zone <- round(percent_rank(desc(PercentileRanks$`25-29ft`)),2)
+
 ```
 
 
-# (4) Player Cluster Model
+```{r}
+zones <- read.csv("ShotZones.csv")
+PlayerSelection <- PercentileRanks %>%
+  filter(idPlayer == 2544)
+
+player_ranks <- tibble(
+  zone = c("zero_nine_zone","ten_nineteen_zone","twenty_twentyfour_zone","twentyfour_twentynine_zone"),
+    Percentile = c(PlayerSelection$zero_nine_zone[1],
+    PlayerSelection$ten_nineteen_zone[1],
+    PlayerSelection$twenty_twentyfour_zone[1],
+    PlayerSelection$twentyfour_twentynine_zone[1])
+  ) %>%
+  mutate(color = case_when(
+    Percentile < .1667 ~ ShotZoneColors[6],
+    Percentile < .3333 ~ ShotZoneColors[5],
+    Percentile < .50 ~ ShotZoneColors[4],
+    Percentile < .6666 ~ ShotZoneColors[3],
+    Percentile < .8333 ~ ShotZoneColors[2],
+    Percentile >= .8333 ~ ShotZoneColors[1],
+    )) %>%
+  arrange(zone)
+
+player_map_color <- c(player_ranks$color)
+zones <- zones %>% left_join(player_ranks, by = c("desc"="zone"))
+```
+
+
+```{r}
+ShotZoneLables <- tibble(
+  x = c(0,0,0,0),
+  y = c(10,19,27,32),
+  label = c(PlayerSelection$zero_nine_zone[1],
+    PlayerSelection$ten_nineteen_zone[1],
+    PlayerSelection$twenty_twentyfour_zone[1],
+    PlayerSelection$twentyfour_twentynine_zone[1]
+  )
+)
+```
+
+
+
+
+```{r}
+library(plotly)
+source("C:/Users/Spelk/Desktop/Georgia Tech Analytics/CSE 6242/CSE6242-S20-PRJ-NBA-frontend/NBADefensiveAnalytics/R/court.R")
+
+plot_court() +
+    coord_fixed(ylim = c(0, 35), xlim = c(-25, 25)) +
+    geom_polygon(
+      data = zones,aes(x = x, y = y, group = desc, fill = Percentile), color = "white", alpha =.80,
+      show.legend = TRUE
+    )+
+  scale_fill_gradient(low = "red", high = "yellow",limits = c(0,1),
+                      breaks = c(.25,.50,.75),
+                      labels = c("25","50","75")) +
+  geom_label(data=ShotZoneLables, aes(x = x,y = y, label = scales::percent(label, accuracy = 1L)),
+              color="#4d4d4d", 
+              size= 5 , angle=0, fontface="bold" ) +
+  ggtitle("<b style='color:#252525'>Defensive Percentile by Zone</b>")+
+  theme(plot.title = element_markdown(hjust = .5),
+        legend.title = element_blank(),
+        legend.key.width = unit(1,"cm"),
+        legend.position=c(1.05, 0.5))
+  
+```
+
+
+# Reactable Table(s)
+
+```{r}
+CompPlayers <- tibble(
+  idPlayer = c(203507,201572,	201143,	203954,1628389),
+  Rk = c(1,2,3,4,5),
+  Player = c("Giannis Antetokounmpo","Brook Lopez","Al Horford","Joel Embiid","Bam Adebayo"),
+  SimilarityScore = c(89,75,66,52,48)
+)
+
+        
+player_tbl <- reactable(
+  CompPlayers,
+  bordered = FALSE, 
+  pagination = FALSE,
+  highlight = TRUE,
+  fullWidth = FALSE,
+  columns = list(
+    idPlayer = colDef(
+      minWidth = 50,
+      cell = function(value, index) {
+        div(
+          img(
+              src = sprintf(paste("https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/latest/260x190/", 
+                                  paste(value,".png", sep = ""), sep = "")),
+              height = '25px',
+              width = '40px',
+              style = "float:left"
+              )
+        )
+      },
+      maxWidth = 50
+    ),
+    Rk = colDef(name = "Rk", maxWidth = 30, style = list(color = "black"),
+                headerStyle = list(color = "black")),
+    Player = colDef(name = "Player",minWidth = 190,style = list(color = "black"),
+                    headerStyle = list(color = "black")),
+    SimilarityScore = colDef(name = "Score (0-100)",minWidth = 120,style = list(color = "black"),
+                             headerStyle = list(color = "black"))
+  )
+)
+
+player_tbl
+```
+
+
+```{r}
+PlayerProfile <- tibble(
+  Type = c("Name","Age","Height","Weight","Team","All-Defensive Team Selections"),
+  Info = c("Anthony Davis","27","6'10","253 lb", "LAL","3")
+)
+
+        
+Profile <- reactable(
+  PlayerProfile,
+  bordered = FALSE, 
+  pagination = FALSE,
+  highlight = TRUE,
+  fullWidth = FALSE,
+  columns = list(
+    Type = colDef(name = "Player Info", minWidth = 150, style = list(color = "black"),
+                headerStyle = list(color = "black")),
+    Info = colDef(name = "Values",minWidth = 110,style = list(color = "black"),
+                    headerStyle = list(color = "black"))
+)
+)
+
+Profile
+```
+
+
+# Player Cluster Plot
 Resource:
 Ideas:
 

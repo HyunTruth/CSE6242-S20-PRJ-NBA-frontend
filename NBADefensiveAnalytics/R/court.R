@@ -32,31 +32,32 @@ three_point_radius = 23.75
 three_point_side_radius = 22
 three_point_side_height = 14
 
+
 plot_court = function(court_theme = court_themes$light, use_short_three = FALSE) {
   if (use_short_three) {
     three_point_radius = 22
     three_point_side_height = 0
   }
   
-  court_points = tibble(
-    x = c(width / 2, width / 2, -width / 2, -width / 2, width / 2),
-    y = c(height, 0, 0, height, height),
-    desc = "perimeter"
-  )
+ #court_dimensions = tibble(
+ #  x = c(width / 2, width / 2, -width / 2, -width / 2, width / 2),
+ #  y = c(height, 0, 0, height, height),
+ #  desc = "perimeter"
+ #)
   
-  court_points = bind_rows(court_points , tibble(
+  court_dimensions = tibble(
     x = c(outer_key_width / 2, outer_key_width / 2, -outer_key_width / 2, -outer_key_width / 2),
     y = c(0, key_height, key_height, 0),
     desc = "outer_key"
-  ))
+  )
   
-  court_points = bind_rows(court_points , tibble(
+  court_dimensions = bind_rows(court_dimensions , tibble(
     x = c(-backboard_width / 2, backboard_width / 2),
     y = c(backboard_offset, backboard_offset),
     desc = "backboard"
   ))
   
-  court_points = bind_rows(court_points , tibble(
+  court_dimensions = bind_rows(court_dimensions , tibble(
     x = c(0, 0), y = c(backboard_offset, backboard_offset + neck_length), desc = "neck"
   ))
   
@@ -103,53 +104,37 @@ plot_court = function(court_theme = court_themes$light, use_short_three = FALSE)
   ### 20-24 ft Line ###
   twenty_twentyfour_line = circle_points(center = c(0, hoop_center_y), radius = 24) %>%
     filter(y > 0) %>%
-    mutate(desc = "twenty_twentyfour")
+    mutate(desc = "twenty_twentyfour_line")
   
+  ### 25-29ft ###
   twentyfour_twentynine_line = circle_points(center = c(0, hoop_center_y), radius = 29) %>%
     filter(y > 0, x > -width / 2, x < width /2) %>%
-    mutate(desc = "twentyfour_twentynine")
-
-  court_points = bind_rows(
-    court_points,
+    mutate(desc = "twentyfour_twentynine_line")
+  
+  court_dimensions <- bind_rows(
+    court_dimensions,
     foul_circle_top,
-    #foul_circle_bottom,
     hoop,
-    restricted,
-    zero_nine_line,
-    ten_nineteen_line,
-    twenty_twentyfour_line,
-    twentyfour_twentynine_line
+    restricted
   )
   
-  court_points <<- court_points
+  zone_dimension <- court_dimensions %>%
+    filter(desc %in% c("zero_nine_line",
+                       "ten_nineteen_line",
+                       "twenty_twentyfour_line",
+                       "twentyfour_twentynine_line"))
   
-  annotation <- data.frame(
-    x = c(0,0,0,0),
-    y = c(10,19,27,32),
-    label = c("55.3%", "47.2%","41.6%","35.1%")
-  )
+  court_dimensions <<- court_dimensions
+  zone_dimension <<- zone_dimension
   
   ggplot() +
-    geom_ribbon(data = court_points,
-                aes(ymin = 0, ymax = 47, x = x), fill = "#FFFFFF", alpha = .7) +
-    geom_ribbon(data = court_points %>% filter(desc == "twentyfour_twentynine"),
-                aes(ymin = 0, ymax = y, x = x), fill = "#92c5de", alpha = .7) +
-    geom_ribbon(data = court_points %>% filter(desc == "twenty_twentyfour"),
-                aes(ymin = 0, ymax = y, x = x), fill = "#fddbc7", alpha = .7) +
-    geom_ribbon(data = court_points %>% filter(desc == "ten_nineteen_line"),
-                aes(ymin = 0, ymax = y, x = x), fill = "#f4a582", alpha = .7) +
-    geom_ribbon(data = court_points %>% filter(desc == "zero_nine_line"),
-                aes(ymin = 0, ymax = y, x = x), fill = "#0571b0", alpha = .7) +
     geom_path(
-      data = court_points,
+      data = court_dimensions,
       aes(x = x, y = y, group = desc),
       color = court_theme$lines
     ) +
-    geom_label(data=annotation, aes(x = x,y = y, label=label),
-              color="#4d4d4d", 
-              size= 5 , angle=0, fontface="bold" ) +
-    coord_fixed(ylim = c(0, 35), xlim = c(-25, 25)) +
-    theme_minimal(base_size = 22) +
+    xlim(-width/2,width/2) +
+    theme_minimal(base_size = 15) +
     theme(
       text = element_text(color = court_theme$text),
       plot.background = element_rect(fill = court_theme$court, color = court_theme$court),
@@ -158,11 +143,6 @@ plot_court = function(court_theme = court_themes$light, use_short_three = FALSE)
       panel.border = element_blank(),
       axis.text = element_blank(),
       axis.title = element_blank(),
-      axis.ticks = element_blank(),
-      legend.background = element_rect(fill = court_theme$court, color = court_theme$court),
-      legend.margin = margin(-1, 0, 0, 0, unit = "lines"),
-      legend.position = "bottom",
-      legend.key = element_blank(),
-      legend.text = element_text(size = rel(1.0))
+      axis.ticks = element_blank()
     )
 }
