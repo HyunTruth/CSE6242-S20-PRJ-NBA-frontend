@@ -1,0 +1,205 @@
+---
+title: "Reactable Drafts"
+author: "Tim Kim"
+date: "3/26/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+
+```
+
+## Imports
+Packages needed
+
+```{r}
+library(tidyverse)
+library(highcharter) #interactive plotting library
+library(tibbletime)
+
+#tim's additions
+library(reactable)
+library(knitr)
+library(htmltools)
+```
+
+## Data
+
+```{r}
+GameLogs <- read.csv("FinalGameLogs.csv")
+levels(GameLogs$Distance) <- c("0-5ft","10-14ft","15-19ft","20-24ft","25-29ft","5-9ft")
+GameLogs$Game_Date <- as.Date(GameLogs$Game_Date)
+
+
+```
+
+
+#Data Manipulation
+```{r}
+
+distance_list <- c("0-5ft","5-9ft","10-14ft","15-19ft","20-24ft","25-29ft")
+DFG_Teams <- GameLogs %>%
+  group_by(Team, Season, Distance) %>%
+  summarise("DFGP" = round(sum(DFGM)/sum(DFGA), 3)) %>%
+  spread(Distance, DFGP)
+
+```
+
+## Analysis for Expected Value based on Defense
+```{r}
+#filter to one season for test purposes
+DFG_rating <- DFG_Teams %>% filter(Season == "2019-20")
+
+DFG_rating <- DFG_rating[, c("Team","0-5ft", "5-9ft", "10-14ft", "15-19ft", "20-24ft", "25-29ft")]
+
+#Determine average expected values
+Av_Exp_value = 2*mean(DFG_rating$`0-5ft`) + 2*mean(DFG_rating$`5-9ft`) + 2*mean(DFG_rating$`10-14ft`) + 2*mean(DFG_rating$`15-19ft`) + 2*mean(DFG_rating$`20-24ft`) + 3*mean(DFG_rating$`25-29ft`)
+
+#Determine rating based on expected value for each team
+DFG_rating <- DFG_rating %>% mutate(Def_Exp_Points = round((2*`0-5ft` + 2*`10-14ft`+2*`15-19ft`+2*`20-24ft`+2*`5-9ft`+3*`25-29ft`) - Av_Exp_value, 3))
+
+
+
+
+
+
+```
+
+
+
+# Build the reactable table
+```{r}
+
+img_path <-  "https://stats.nba.com/media/img/teams/logos/season/2019-20/"
+
+colorizer <- function(x) rgb(colorRamp(c("#386cb0", "#ffff99"))(x), maxColorValue = 255)
+
+stylizer <- function(value, col_name, df) {
+  normalized <- (value - min(df[,col_name]))/(max(df[,col_name]) - min(df[,col_name]))
+  color <- colorizer(normalized)
+  list(background =color)
+}
+
+
+format_pct <- function(value) {
+  formatC(paste0(round(value * 100), "%"), width = 4)
+}
+
+dist_column <- function(maxWidth = 65, col_name, df, class = NULL, ...) {
+  colDef(
+    cell = format_pct,
+    maxWidth = maxWidth,
+    style = function(value) stylizer(value, col_name, df),
+    ...
+  )
+}
+
+
+
+
+tbl <- reactable(
+  DFG_rating,
+  bordered = TRUE, 
+  pagination = FALSE,
+  columns = list(
+    Team = colDef(
+      minWidth = 100,
+      headerStyle = list(fontWeight = 700),
+      cell = function(value, index) {
+        div(
+          img(
+              src = sprintf(paste(img_path, paste(value,"_logo.svg", sep = ""), sep = "")),
+              height = '25px',
+              width = '40px',
+              style = "float:left"
+              ),
+          div(value,
+              style = "float:right",
+              style = "padding:10px;")
+        )
+      }
+    ),
+    
+    Def_Exp_Points = colDef(
+      minWidth = 80,
+      style = function(value) stylizer(value, col_name = "Def_Exp_Points", df = DFG_rating),
+      name = "Exp Shot Value Metric"
+    ),
+    `0-5ft` = dist_column(col_name = "0-5ft", df = DFG_rating),
+    `5-9ft` = dist_column(col_name = "5-9ft", df = DFG_rating),
+    `10-14ft` = dist_column(col_name = "10-14ft", df = DFG_rating),
+    `15-19ft` = dist_column(col_name = "15-19ft", df = DFG_rating),
+    `20-24ft` = dist_column(col_name = "20-24ft", df = DFG_rating),
+    `25-29ft` = dist_column(col_name = "25-29ft", df = DFG_rating)
+    
+  )
+)
+
+
+
+```
+
+
+
+```{r}
+div(
+  h2("Defensive Field Goal Efficiencies by Season"),
+  "Field goals made vs attempted. The lower the number the better",
+  tbl
+)
+
+```
+
+#Player reactable table
+```{r}
+      Player_DF <- GameLogs %>%
+        group_by(Player,Distance, Team, Season, idPlayer) %>%
+        filter(sum(DFGA) >= 150) %>%
+        summarise(DFGP  = round(sum(DFGM)/sum(DFGA), 3)) %>%
+        spread(Distance, DFGP)
+
+Player_DF <- Player_DF[complete.cases(Player_DF),] %>% filter(Season == "2019-20")
+
+Player_DF 
+        
+player_tbl <- reactable(
+  Player_DF,
+  bordered = TRUE, 
+  pagination = FALSE,
+  columns = list(
+    idPlayer = colDef(
+      minWidth = 50,
+      headerStyle = list(fontWeight = 700),
+      cell = function(value, index) {
+        div(
+          img(
+              src = sprintf(paste("https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/latest/260x190/", paste(value,".png", sep = ""), sep = "")),
+              height = '25px',
+              width = '40px',
+              style = "float:left"
+              )
+        )
+      }
+    ),
+    
+    `0-5ft` = dist_column(col_name = "0-5ft", df = Player_DF),
+    `5-9ft` = dist_column(col_name = "5-9ft", df = Player_DF),
+    `10-14ft` = dist_column(col_name = "10-14ft", df = Player_DF),
+    `15-19ft` = dist_column(col_name = "15-19ft", df = Player_DF),
+    `20-24ft` = dist_column(col_name = "20-24ft", df = Player_DF),
+    `25-29ft` = dist_column(col_name = "25-29ft", df = Player_DF)
+    
+  )
+)
+        
+
+        
+```
+
+```{r}
+player_tbl
+```
