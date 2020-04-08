@@ -2,52 +2,37 @@ library(shiny)
 
 server <- function(input, output) {
     
-    #### Player Profile ####
+    #------------------#
+    ### Player Image ###
+    #------------------#
     
     # PlayerImage
-    HeadshotURL <- reactive(input$PlayerSelection)
     SinglePlayer <- reactive(PlayerInfo %>% filter(Player == input$PlayerSelection) %>% select(urlPlayerHeadshot))
     URL <- reactive(paste(SinglePlayer()$urlPlayerHeadshot[[1]]))
     
     output$PlayerImage <- renderUI({
         url <- URL()
-        div(id = "player_img",
-            tags$img(src = URL))
-        tags$img(src = url)
+        tags$img(src = url, width = "200px", height = "160px",style="text-align: center;")
     })
     
-    output$PlayerProfile <- renderReactable({
-        PlayerProfile <- tibble(
-            Type = c("Name","Age","Height","Weight","Team","All-Defensive Team Selections"),
-            Info = c("Anthony Davis","27","6'10","253 lb", "LAL","3")
-        )
-        
-        
-        reactable(
-            PlayerProfile,
-            bordered = FALSE, 
-            pagination = FALSE,
-            highlight = TRUE,
-            fullWidth = TRUE,
-            class = "CompTable",
-            columns = list(
-                Type = colDef(name = "Player Info", minWidth = 150, style = list(color = "black"),
-                              headerStyle = list(color = "black")),
-                Info = colDef(name = "Values",minWidth = 110,style = list(color = "black"),
-                              headerStyle = list(color = "black"))
-            )
-        )
-        
-        Profile
+    #------------------#
+    ### Player Title ###
+    #------------------#
+    player_name <- reactive(input$PlayerSelection)
+    output$PlayerHeader <- renderUI({
+        tags$h2("Top Comparables", class = "section_header")
     })
     
+    #------------------------#
+    ### Player Comp Table  ###
+    #------------------------#
     output$PlayerComps <- renderReactable({
         reactable(
             CompPlayers,
             bordered = FALSE, 
             pagination = FALSE,
             highlight = TRUE,
-            fullWidth = TRUE,
+            fullWidth = FALSE,
             class = "CompTable",
             defaultColDef = colDef(headerClass = "header", align = "left"),
             columns = list(
@@ -67,38 +52,38 @@ server <- function(input, output) {
                     },
                     maxWidth = 50
                 ),
-                Rk = colDef(name = "Rk", maxWidth = 45, style = list(color = "#252525")),
-                Player = colDef(name = "Player",minWidth = 140,style = list(color = "#252525")),
-                SimilarityScore = colDef(name = "Score (0-100)",minWidth = 60,style = list(color = "#252525",align = "right"))
+                Rk = colDef(name = "Rk", maxWidth = 45,class = "table_contents"),
+                Player = colDef(name = "Player",minWidth = 140,class = "table_contents"),
+                SimilarityScore = colDef(name = "Score (0-100)",minWidth = 60, class = "table_contents")
             )
         )
         
     })
-    
-    # Distance Scatterplot
-    output$PlayerScatter <- renderHighchart({
-        DFG_Percentage <- GameLogs %>%
-            filter(Season == input$SeasonSelection,
-                   Distance == input$DistanceSelection) %>% # Filters
-            group_by(idPlayer,Player, Team, Distance) %>%
-            summarise(DFGM = sum(DFGM), DFGA = sum(DFGA), TotalMins = sum(minutes)) %>%
-            mutate(DFGP = round(DFGM/DFGA,3),
-                   DFGAPer36 = round((DFGM/TotalMins)*36,2),
-                   Color_Col = if_else(Player != input$PlayerSelection,"All Other",input$PlayerSelection)) %>%
-            filter(DFGA > 50) # Filters with default value (20th percentile and up?)
-
-        hchart(DFG_Percentage, "scatter", hcaes(x = "DFGAPer36", y = "DFGP",
-                                                group = "Color_Col",
-                                                name = "Player", DFGA36  = "DFGAPer36", 
-                                                DFGEfficiency = "DFGP", Distance = "Distance")) %>%
-            hc_tooltip(pointFormat = "<b>{point.name}</b><br />Shots Defended/36min: {point.DFGA36}<br />DFG%: {point.DFGEfficiency}") %>%
-            hc_title(text = "<b>Shots Defended Per 36 minutes vs. DFG%</b>",
-                     margin = 10,
-                     align = "left") %>%
-            hc_add_theme(hc_theme_elementary()) %>%
-            hc_colors(ScatterOppacity2)
+    #-------------#
+    ### Cluster ###
+    #-------------#
+    output$Clusters <- renderPlotly({
+        ClusterData <- PlayerClusters %>%
+            select(PLAYER_ID, x, y) %>%
+            left_join(PlayerInfo, by = c("PLAYER_ID" = "idPlayer"))
+        
+        ClusterScatter <- ggplot(data = ClusterData,aes(x = x, y = y,text = Player)) +
+            geom_point(color = "#386cb0", alpha = .90, size = 2) +
+            gghighlight(Player == input$PlayerSelection, label_key = Player,
+                        unhighlighted_params = list(size = 1, colour = alpha("#636363", 0.65))) +
+            labs(title = "Defensive Player Clusters",
+                 subtitle = glue("NBA 2019-20 Season"),
+                 x = "LDA 1",
+                 y = "LDA 2",
+                 caption = "See Methodology tab for details") +
+            theme_minimal(base_family = "Source Sans Pro") +
+            theme(plot.title = element_text(size = 14))
+        ggplotly(ClusterScatter, tooltip = "text") %>% config(displayModeBar = F)
     })
     
+    #---------------#
+    ### Shot Zone ###
+    #---------------#
     output$ShotZones <- renderPlot({
         # Data
         PercentileRanks <- GameLogs %>%
@@ -152,17 +137,18 @@ server <- function(input, output) {
             coord_fixed(ylim = c(0, 35), xlim = c(-25, 25)) +
             geom_polygon(
                 data = zonesPlayer,aes(x = x, y = y, group = desc, fill = Percentile), color = "white", alpha =.70,
-                show.legend = TRUE
+                show.legend = FALSE
             )+
+            ylim(0,35) +
             scale_fill_gradient(low = "yellow", high = "red",limits = c(0,1),
                                 breaks = c(0,.25,.50,.75,1),
                                 labels = c("0","25","50","75","100")) +
             geom_label(data=ShotZoneLables, aes(x = x,y = y, label = scales::ordinal(label*100)),
                        color="#4d4d4d", 
                        size= 5 , angle=0, fontface="bold" ) +
-            ggtitle("Defensive Percentile by Zone")+
+            labs(title = "DFG% Percentile by Zone") +
             theme(legend.title = element_blank(),
-                  legend.key.height = unit(1,"cm"),
-                  legend.position=c(1.05, 0.5))
+                  legend.key.width = unit(.75,"cm"),
+                  legend.position= "bottom")
     })
 }

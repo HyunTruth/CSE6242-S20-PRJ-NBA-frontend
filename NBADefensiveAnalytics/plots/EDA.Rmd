@@ -39,6 +39,10 @@ Subset <- PlayerInfo %>%
   filter(Player == "Anthony Davis")
 ```
 
+```{r}
+PlayerClusters <- read.csv("../data/PlayerClusters.csv")
+```
+
 
 ## Plotting
 
@@ -323,6 +327,51 @@ Profile
 # Player Cluster Plot
 Resource:
 Ideas:
+
+```{r}
+#library(plotly)
+#library(gghighlight)
+#library(glue)
+#library(hrbrthemes)
+ClusterData <- PlayerClusters %>%
+  select(PLAYER_ID, x, y) %>%
+  left_join(PlayerInfo, by = c("PLAYER_ID" = "idPlayer"))
+
+ClusterScatter <- ggplot(data = ClusterData,aes(x = x, y = y)) +
+  geom_point(color = "#011627", alpha = .75) +
+  #gghighlight()
+  labs(title = "Defensive Player Clusters",
+       subtitle = glue("NBA 2019-20 Season"),
+       x = "LDA 1",
+       y = "LDA 2",
+       caption = "See Methodology tab for details") +
+  theme_minimal()
+ggplotly(ClusterScatter)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

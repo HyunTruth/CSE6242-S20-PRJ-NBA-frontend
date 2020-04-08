@@ -8,26 +8,35 @@ ui <- fluidPage(
     theme = shinytheme("cosmo"),
     #HTML/CSS Components to include
     tags$head(tags$link(rel="stylesheet", type="text/css", href="comptable.css")),
-    titlePanel("NBA Defensive Player Comparisons", windowTitle = "NBADefensivePlayerComparisons"),
+    tags$head(tags$link(rel="stylesheet", type="text/css", href="page.css")),
+    h1(id="page_title", "NBA Defensive Player Comparisons"),
     # Tabs
-    mainPanel(
-        tabsetPanel(
-            
-            tabPanel("Player Profile",
-                     fluidRow(
-                         column(4,selectInput("PlayerSelection","Players",choices = levels(BoxScores$Player))),
-                         column(4,selectInput("DistanceSelection", "Distance", choices = distance_list)),
-                         column(4,selectInput("SeasonSelection", "Season", choices = c("2019-20","2018-19")))
-                     ),
-                     fluidRow(column(6,uiOutput("PlayerImage", width = "250px")),
-                              column(3,reactableOutput("PlayerProfile",width = "200px"))),
-                     br(),
-                     fluidRow(reactableOutput("PlayerComps",width = "500px", height = "250px")),
-                     br(),
-                     fluidRow(highchartOutput("PlayerScatter", width = "550px", height = "380px")),
-                     fluidRow(plotOutput("ShotZones",width = "90%",height = "380px"))
+    navbarPage(title = "NBA Defensive Clusters",windowTitle = "NBA Defensive Clusters",
+               tabPanel("Player Comparisons",
+                        fluidRow(
+                            column(3,selectInput("PlayerSelection","Players",choices = levels(BoxScores$Player))),
+                            column(3,selectInput("SeasonSelection", "Season", choices = c("2019-20","2018-19")))
+                        ),
+                        fluidRow(
+                            sidebarLayout(fluid = FALSE,
+                                sidebarPanel(id = "sidebar",
+                                             uiOutput("PlayerImage"),
+                                             uiOutput("PlayerHeader"),
+                                             reactableOutput("PlayerComps", width = "100%", height = "260px"),
+                                             width = 4
+                                            ),
+                                mainPanel(plotlyOutput("Clusters", width = "90%", height = "480px"),
+                                          width = 8
+                                          )
+                                        )
+                                ),
+                        fluidRow(h2(class = "section_header", "Player Stats"))
+                        #fluidRow() Shot Zone
+                        #fluidRow() Rebounding Zone
                     ),
-            tabPanel("Player Clusters")
-        ) 
-    )
+               tabPanel("Player Stats",
+                        fluidRow(h2(class = "section_header", "Player Stats"))
+                        ),
+            tabPanel("Methodology")
+        )
 )

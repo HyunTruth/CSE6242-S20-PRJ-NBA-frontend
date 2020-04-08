@@ -1,10 +1,20 @@
+#-------------#
+### Imports ###
+#-------------#
+
 library(tidyverse)
 library(highcharter)
 library(tibbletime)
 library(ggtext)
+library(reactable)
+library(plotly)
+library(gghighlight)
+library(glue)
 source("C:/Users/Spelk/Desktop/Georgia Tech Analytics/CSE 6242/CSE6242-S20-PRJ-NBA-frontend/NBADefensiveAnalytics/R/court.R")
 
-## Data & Logic
+#------------------#
+### Data & Logic ###
+#------------------#
 GameLogs <- read.csv("C:/MAMP/htdocs/FinalGameLogs.csv")
 zones <- read.csv("../data/ShotZones.csv")
 GameLogs$Game_Date <- as.Date(GameLogs$Game_Date)
@@ -14,7 +24,11 @@ BoxScores <- read.csv("../data/BoxScores.csv")
 PlayerInfo <- BoxScores %>%
   distinct(idPlayer,Player,urlPlayerHeadshot)
 
-# Player Com p Example
+PlayerClusters <- read.csv("../data/PlayerClusters.csv")
+
+#-------------------------#
+### Player Comp Example ###
+#-------------------------#
 CompPlayers <- tibble(
   idPlayer = c(203507,201572,	201143,	203954,1628389),
   Rk = c(1,2,3,4,5),
@@ -22,6 +36,12 @@ CompPlayers <- tibble(
   SimilarityScore = c(89,75,66,52,48)
 )
 
+
+
+
+#------------------------------------#
+### Filters, Functions, and Colors ###
+#------------------------------------#
 
 # Static Filters
 distance_list <- c("0-4ft","5-9ft","10-14ft","15-19ft","20-24ft","25-29ft")
