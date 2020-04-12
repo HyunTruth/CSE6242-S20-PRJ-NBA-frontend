@@ -35,8 +35,11 @@ server <- function(input, output) {
     
     
     output$PlayerComps <- renderReactable({
-        data <- CompPlayers()
-        reactable(
+        data <- PlayerComparisons %>%
+            filter(player_name == input$PlayerSelection) %>%
+            select(neighbor_player_id, neighbor_player_name, pct_match,selections) %>%
+            mutate(pct_match = scales::percent(round(pct_match,2)))
+        CompTable <- reactable(
             data,
             bordered = FALSE, 
             pagination = FALSE,
@@ -61,38 +64,26 @@ server <- function(input, output) {
                     },
                     maxWidth = 50
                 ),
-                #rank = colDef(name = "Rk", maxWidth = 45,class = "table_contents"),
                 neighbor_player_name = colDef(name = "Player",minWidth = 140,class = "table_contents"),
                 pct_match = colDef(name = "Percent Match",minWidth = 60, class = "table_contents"),
                 selections = colDef(
                     name = 'All Def Selections',
                     cell = function(value) {
-                        if (value < 1) {"\u2718"
+                        if (value > 0) {
+                            paste("\u2605", toString(value))
                         }
-                        else {paste("\u2605", toString(value))}
-                    },
-                    style = function(value) {
-                        if (value < 1) {
-                            color <- "#25252"
-                        } else {
-                            color <- "#DAA520"
-                        }
-                        list(color = color, fontWeight = 'bold')
+                        else {"0"}
                     }
                 )
             )
         )
+        CompTable
         
     })
     #-------------#
     ### Cluster ###
     #-------------#
     
-    #paste0("Defensive Player Comparisons",
-    #       "<br>",
-    #       "<sup>",
-    #       "2-Dimensional Space from T-SNE algorithm",
-    #       "</sup>")
     
     output$Clusters <- renderPlotly({
         CP <- CompPlayers()
@@ -248,10 +239,10 @@ server <- function(input, output) {
             theme(plot.title = element_text(size = 14))
         ggplotly(DFPScatter, tooltip = "text") %>% 
             config(displayModeBar = F) %>%
-            layout(title = list(text = paste0("Defensive FG% vs Shots Defended/36 min",
+            layout(title = list(text = paste0("Defensive FG% vs Shots Defended/36 min ",input$SeasonSelection, " Season",
                                               "<br>",
                                               "<sup>",
-                                              paste0(playerName()," and Player Comps"),
+                                              paste(playerName(),"and Player Comps"),
                                               "</sup>")),
                    margin = list(b=160),
                    annotations = 

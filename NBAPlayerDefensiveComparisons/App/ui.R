@@ -22,8 +22,7 @@ ui <- fluidPage(
                #---------------------------#
                tabPanel("Player Comparisons",
                         fluidRow(
-                            column(3,selectInput("PlayerSelection","Players",choices = levels(BoxScores$Player))),
-                            column(3,selectInput("SeasonSelection", "Season", choices = c("2019-20","2018-19")))
+                            column(3,selectInput("PlayerSelection","Players",choices = levels(BoxScores$Player)))
                         ),
                         fluidRow(
                             sidebarLayout(fluid = FALSE,
@@ -45,12 +44,12 @@ ui <- fluidPage(
                tabPanel("Player Stats",
                         tabsetPanel(
                             tabPanel("DFG% Shot Zone",
+                                     fluidRow(column(3,selectInput("SeasonSelection", "Season", choices = c("2019-20","2018-19")))),
                                     fluidRow(plotlyOutput("ShotZones",width = "550px", height = "400px"))
                             ),
                             tabPanel("DFG% vs Shots Defended/36 min",
                                      fluidRow(selectInput("Distance","Distance",choices = distance_list)),
-                                     fluidRow(plotlyOutput("DFGPercent",width = "550px", height = "450px"))),
-                            tabPanel("Rebound Density Map")
+                                     fluidRow(plotlyOutput("DFGPercent",width = "550px", height = "450px")))
                         )
                         ),
                #---------------------#
