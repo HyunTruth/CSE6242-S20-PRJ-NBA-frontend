@@ -2,7 +2,7 @@
 
 ## Description
 
-The **NBA Player Defensive Comparisons** package is an interactive application that allows NBA fans to explore and visualize defensive performance of specific players. The applications uses a clustering model that shows the top player comparisons for any selected player. The clustering model uses many box-score and advanced stats to group similar players together. Additionally, to help visualize similar players, a technique called t-Distributed Stochastic Neighbor Embedding (t-SNE) was used to do dimensionality reduction. Using t-SNE, we created a 2-D scatterplot that allows for visualizing the player comparisons in a lower dimensional space. Lastly, the application has some player-specific plots that can be explored. The plots included are: (1) Defensive Field Goal Percentage (DFGP) percentile by shot zone, and (2) Shots Defended per 36 minutes vs DFGP.
+The **NBA Player Defensive Comparisons** package is an interactive application that allows NBA fans to explore and visualize defensive performance of specific players. The applications uses a clustering model that shows the top player comparisons for any selected player. The clustering model uses many box-score and advanced stats to group similar players together. Additionally, to help visualize similar players, a technique called t-Distributed Stochastic Neighbor Embedding (t-SNE) was used to do dimensionality reduction on the data. Using t-SNE, we created a 2-D scatterplot that allows for visualizing the player comparisons in a lower dimensional space. Lastly, the application has some player-specific plots that can be explored. The plots included are: (1) Defensive Field Goal Percentage (DFGP) percentile by shot zone, and (2) Shots Defended per 36 minutes vs DFGP.
 
 Here is the live version of the Application: <link here>
 
@@ -29,7 +29,7 @@ Before you can execute the app, you need to have the following software download
 2. RStudio (free version): https://rstudio.com/products/rstudio/download/
 3. All R packages in the Dependencies.R file
 
-Executinng and running the application can be completed through the following steps:
+Executing and running the application can be completed through the following steps:
 
 1. Complete the Installation steps from above
 2. Navigate to the relative folder location: ..\CSE6242-S20-PRJ-NBA-frontend\NBADefensiveAnalytics\App
@@ -40,8 +40,8 @@ Executinng and running the application can be completed through the following st
 
 All data was scraped from the following sources:
 
-- stats.nba.com
-- basketball-reference.com
+- https://stats.nba.com/
+- https://www.basketball-reference.com/
 
 ### Authors
 

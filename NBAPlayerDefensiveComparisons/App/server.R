@@ -112,8 +112,8 @@ server <- function(input, output) {
                         unhighlighted_params = list(size = 1, colour = alpha("#636363", 0.65))) +
             labs(title = "Defensive Player Comparisons",
                  subtitle = glue("2-Dimensional Space from T-SNE algorithm"),
-                 x = "LDA 1",
-                 y = "LDA 2",
+                 x = "Dimension 1",
+                 y = "Dimension 2",
                  caption = "See Methodology tab for details") +
             theme_minimal(base_family = "Source Sans Pro") +
             theme(plot.title = element_text(size = 14))

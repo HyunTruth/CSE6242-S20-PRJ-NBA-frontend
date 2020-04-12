@@ -2,11 +2,9 @@
 ### Imports ###
 #-------------#
 
-library(ggtext)
 library(reactable)
 library(plotly)
 library(tidyverse)
-library(tibbletime)
 library(gghighlight)
 library(glue)
 library(extrafont)
