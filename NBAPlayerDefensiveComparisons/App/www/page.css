@@ -7,6 +7,11 @@
   background-color: #FFFFFF;
 }
 
+.player_subheader {
+  font-size: 14px;
+  font-weight: bold;
+}
+
 .zone_player {
   color: #386cb0;
 }

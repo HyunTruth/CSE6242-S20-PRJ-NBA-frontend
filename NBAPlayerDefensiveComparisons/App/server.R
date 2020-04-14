@@ -19,8 +19,29 @@ server <- function(input, output) {
     ### Player Title ###
     #------------------#
     player_name <- reactive(input$PlayerSelection)
+    AllD <- reactive(if (player_name() %in% AllDefense$Player) {
+            subset <- AllDefense %>% dplyr::filter(Player == player_name()) %>% select(selections)
+            subset$selections[[1]]
+        }
+        else{
+            0
+        })
+    
     output$PlayerHeader <- renderUI({
-        tags$h2("Top Comparables", class = "section_header")
+        tags$h3(player_name(), class = "section_header")
+    })
+    output$PlayerSubheader <- renderUI({
+        symbol <- if (AllD() > 0) {
+            "\u2605"
+        }
+        else{
+            ""
+        }
+        tags$h5(paste("All Defensive Selections:",AllD(),symbol), class = "player_subheader")
+    })
+    
+    output$TableHeader <- renderUI({
+        tags$h3("Top Comparables", class = "section_header")
     })
     
     #------------------------#
@@ -70,7 +91,7 @@ server <- function(input, output) {
                     name = 'All Def Selections',
                     cell = function(value) {
                         if (value > 0) {
-                            paste("\u2605", toString(value))
+                            paste(toString(value),"\u2605")
                         }
                         else {"0"}
                     }
@@ -95,23 +116,31 @@ server <- function(input, output) {
         
         ClusterData <- PlayerClusters %>%
             select(PLAYER_ID, x, y) %>%
-            left_join(PlayerInfo, by = c("PLAYER_ID" = "idPlayer"))
+            left_join(PlayerInfo, by = c("PLAYER_ID" = "idPlayer")) %>%
+            mutate(PlayerComp = if_else(Player %in% NearestNeighbors,"Comparison","All Other"))
         
-        ClusterScatter <- ggplot(data = ClusterData,aes(x = x, y = y,text = Player)) +
-            geom_point(color = "#386cb0", alpha = .90, size = 2.3) +
-            gghighlight(Player %in% NearestNeighbors, label_key = Player,
-                        unhighlighted_params = list(size = 1, colour = alpha("#636363", 0.65))) +
+        ClusterScatter <- ggplot(data = ClusterData,aes(x = x, y = y,
+                                                        text = paste(Player,"<br>",PlayerComp),
+                                                        color = PlayerComp)) +
+            geom_point(alpha = .80, aes(size = PlayerComp),
+                       show.legend = TRUE) +
+            scale_color_manual(values = ScatterColors) +
+            scale_size_manual(values = c(1,2.1)) +
             labs(title = "Defensive Player Comparisons",
                  subtitle = glue("2-Dimensional Space from T-SNE algorithm"),
                  x = "Dimension 1",
                  y = "Dimension 2",
                  caption = "See Methodology tab for details") +
             theme_minimal(base_family = "Source Sans Pro") +
-            theme(plot.title = element_text(size = 14))
+            theme(plot.title = element_text(size = 14),
+                  legend.title = element_blank())
         ggplotly(ClusterScatter, tooltip = "text") %>%
             config(displayModeBar = F) %>%
-            layout(title = list(text = HTML(
-                glue("Defensive Player Comparisons <br> <sup class = 'subtitles'> {playerName()} and Comparables </sup>"))))
+            layout(title = list(text = paste0("t-SNE Results",
+                                                     "<br>",
+                                                     "<sup>",
+                                                     "See Methodology tab for details",
+                                                     "</sup>")))
     })
     
     #---------------#
@@ -219,38 +248,33 @@ server <- function(input, output) {
             group_by(idPlayer,Player,Distance) %>%
             summarise(T_DFGM = sum(DFGM), T_DFGA = sum(DFGA), Min = sum(minutes)) %>%
             mutate(DFG_Percent = round(T_DFGM/T_DFGA,3), 
-                   ShotsDefended_Per36 = round((T_DFGM/Min)*36,2)) %>%
+                   ShotsDefended_Per36 = round((T_DFGM/Min)*36,2),
+                   PlayerComp = if_else(Player %in% NearestNeighbors,"Comparison","All Other")) %>%
             filter(T_DFGA >= 100)
         
         max_x <- max(DFG_Percentage$ShotsDefended_Per36)
         
         DFPScatter <- ggplot(data = DFG_Percentage,aes(x = ShotsDefended_Per36, 
                                                        y = DFG_Percent,
-                                                       text = paste0("Player:",Player,"\n","DFG%:",scales::percent(round(DFG_Percent,2))))) +
-            geom_point(color = "#386cb0", alpha = .90, size = 2.3) +
-            gghighlight(Player %in% NearestNeighbors, label_key = Player,
-            unhighlighted_params = list(size = 1, colour = alpha("#636363", 0.65))) +
+                                                       text = paste0("Player:",Player,"\n","DFG%:",scales::percent(round(DFG_Percent,2))),
+                                                       color = PlayerComp)) +
+            geom_point(alpha = .90, aes(size = PlayerComp)) +
+            scale_color_manual(values = ScatterColors) +
+            scale_size_manual(values = c(1,2.1)) +
             labs(title = "Defensive FG% vs Shots Defended/36 min",
                  subtitle = glue("NBA 2019-20 Season"),
                  x = "Shots Defended/36 min",
                  y = "Defensive FG%",
                  caption = "Players with >= 150 shots defended only") +
             theme_minimal(base_family = "Source Sans Pro") +
-            theme(plot.title = element_text(size = 14))
+            theme(plot.title = element_text(size = 14),
+                  legend.title = element_blank())
         ggplotly(DFPScatter, tooltip = "text") %>% 
             config(displayModeBar = F) %>%
             layout(title = list(text = paste0("Defensive FG% vs Shots Defended/36 min ",input$SeasonSelection, " Season",
                                               "<br>",
                                               "<sup>",
-                                              paste(playerName(),"and Player Comps"),
-                                              "</sup>")),
-                   margin = list(b=160),
-                   annotations = 
-                       list(x = 1, y = -0.5, #position of text adjust as needed 
-                            text = "Players with less than 100 shots are excluded", 
-                            showarrow = F, xref='paper', yref='paper', 
-                            xanchor='right', yanchor='auto', xshift=0, yshift=0,
-                            font=list(size=10, color="#636363"))
-            )
+                                              "Players with less than 100 shots defended are excluded"),
+                                              "</sup>"))
     })
 }

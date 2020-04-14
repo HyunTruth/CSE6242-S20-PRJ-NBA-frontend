@@ -16,19 +16,21 @@ ui <- fluidPage(
     #--------------------#
     ### Navigation Bar ###
     #--------------------#
-    navbarPage(title = "NBA Defensive Clusters",windowTitle = "NBA Defensive Clusters",
+    navbarPage(title = "Defensive Comparables",windowTitle = "NBA Player Defensive Comparables",
                #---------------------------#
                ### Player Comparison Tab ###
                #---------------------------#
                tabPanel("Player Comparisons",
                         fluidRow(
-                            column(3,selectInput("PlayerSelection","Players",choices = levels(BoxScores$Player)))
+                            column(3,selectInput("PlayerSelection","Players",choices = player_list))
                         ),
                         fluidRow(
                             sidebarLayout(fluid = FALSE,
                                 sidebarPanel(id = "sidebar",
                                              uiOutput("PlayerImage"),
                                              uiOutput("PlayerHeader"),
+                                             uiOutput("PlayerSubheader"),
+                                             uiOutput("TableHeader"),
                                              reactableOutput("PlayerComps", width = "100%", height = "260px"),
                                              width = 4
                                             ),
@@ -49,7 +51,7 @@ ui <- fluidPage(
                             ),
                             tabPanel("DFG% vs Shots Defended/36 min",
                                      fluidRow(selectInput("Distance","Distance",choices = distance_list)),
-                                     fluidRow(plotlyOutput("DFGPercent",width = "550px", height = "450px")))
+                                     fluidRow(plotlyOutput("DFGPercent",width = "600px", height = "450px")))
                         )
                         ),
                #---------------------#

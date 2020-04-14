@@ -57,10 +57,12 @@ PlayerComparisons <- PlayerComparisons %>%
 
 # Static Filters
 distance_list <- c("0-4ft","5-9ft","10-14ft","15-19ft","20-24ft","25-29ft")
-
+CurrentSeason <- GameLogs %>% filter(Season == "2019-20")
+player_list <- levels(CurrentSeason$Player)
 
 # Colors
 ScatterColors <- c(
   "#636363",
   "#386cb0"
 )
+

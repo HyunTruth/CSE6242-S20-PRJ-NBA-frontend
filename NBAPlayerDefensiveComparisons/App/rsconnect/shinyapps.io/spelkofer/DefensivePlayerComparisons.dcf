@@ -5,8 +5,8 @@ account: spelkofer
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2103941
-bundleId: 3003716
+bundleId: 3004197
 url: https://spelkofer.shinyapps.io/DefensivePlayerComparisons/
-when: 1586712781.31765
+when: 1586724677.98769
 asMultiple: FALSE
 asStatic: FALSE
