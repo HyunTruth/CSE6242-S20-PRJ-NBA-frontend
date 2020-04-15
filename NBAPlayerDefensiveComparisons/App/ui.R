@@ -57,6 +57,7 @@ ui <- fluidPage(
                #---------------------#
                ### Methodology Tab ###
                #---------------------#
-                tabPanel("Methodology")
+                tabPanel("Methodology",
+                         includeMarkdown("methodology.md"))
         )
 )

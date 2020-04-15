@@ -11,6 +11,7 @@ library(extrafont)
 library(scales)
 library(htmltools)
 library(ggtext)
+library(markdown)
 source("court.R")
 
 #------------------#
