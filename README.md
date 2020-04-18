@@ -38,6 +38,8 @@ Executing and running the application can be completed through the following ste
 3. Click on the ui.R file to open it in RStudio
 4. Click 'Run App' in the top right corner of the RStudio application
 
+_Video instructions:_ https://www.youtube.com/watch?v=Gs_QXbM1OVU&feature=youtu.be
+
 ## Data Source
 
 All data was scraped from the following source:
